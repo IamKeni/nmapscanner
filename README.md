@@ -17,7 +17,7 @@ Een moderne, gebruiksvriendelijke web-based tool voor het genereren van Nmap sca
 
 ## 🚀 Live Demo
 
-Bezoek [IamKenii.github.io/nmapscanner](https://Iamkenii.github.io/nmapscanner)
+Bezoek [IamKenii.github.io/nmapscanner](https://Iamkeni.github.io/nmapscanner)
 
 ## 📦 Features Overzicht
 

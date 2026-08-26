@@ -1,21 +1,17 @@
-// Controller - Business logic and event handling
 const controller = {
-    // Initialize application
     init() {
-        // Render options
-        const config = model.getConfig();
-        view.renderOptions(config, this);
-
-        // Setup event listeners
+        this.renderAll();
         this.setupEventListeners();
-
-        // Initial command generation
         this.updateCommand();
     },
 
-    // Setup event listeners
+    renderAll() {
+        const config = model.getConfig();
+        view.renderOptions(config, this);
+        view.renderPresets(this);
+    },
+
     setupEventListeners() {
-        // Target input
         const targetInput = document.getElementById('target');
         if (targetInput) {
             targetInput.addEventListener('input', (e) => {
@@ -24,121 +20,147 @@ const controller = {
             });
         }
 
-        // Target type radio buttons
-        const targetTypeRadios = document.querySelectorAll('input[name="targetType"]');
-        targetTypeRadios.forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                model.setTargetType(e.target.value);
+        const sudoToggle = document.getElementById('sudoToggle');
+        if (sudoToggle) {
+            sudoToggle.addEventListener('change', (e) => {
+                model.setSudo(e.target.checked);
                 this.updateCommand();
             });
-        });
+        }
 
-        // OS selection
-        const osSelect = document.getElementById('osSelect');
-        if (osSelect) {
-            osSelect.addEventListener('change', (e) => {
-                model.setOS(e.target.value);
+        const advPanel = document.getElementById('advancedPanel');
+        const toggleAdvBtn = document.getElementById('toggleAdvancedPanel');
+        
+        const advTrigger = document.querySelector('.card-header-toggle');
+
+        if (advTrigger && advPanel) {
+            advTrigger.addEventListener('click', () => {
+                advPanel.classList.toggle('show');
+                const isOpen = advPanel.classList.contains('show');
+                if (toggleAdvBtn) {
+                    toggleAdvBtn.textContent = isOpen ? 'Sluiten ▲' : 'Openen ▼';
+                }
+            });
+        }
+
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', () => view.applySearchFilter());
+        }
+
+        const copyBtn = document.getElementById('copyBtn');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => this.copyCommand());
+        }
+
+        const resetBtn = document.getElementById('resetBtn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                model.resetState();
+                view.expandedCategories.clear(); // Leeg ook de openstaande accordeons bij reset
+                if (targetInput) targetInput.value = '';
+                if (sudoToggle) sudoToggle.checked = false;
+                if (searchInput) searchInput.value = '';
+                if (advPanel) advPanel.classList.remove('show');
+                if (toggleAdvBtn) toggleAdvBtn.textContent = 'Openen ▼';
+                this.renderAll();
                 this.updateCommand();
             });
         }
     },
 
-    // Handle option toggle
-    handleOptionToggle(optionKey, option, checked) {
-        model.toggleOption(optionKey, option, checked);
+    handleOptionToggle(optionKey, option, categoryKey, checked) {
+        model.toggleOption(optionKey, option, categoryKey, checked);
         
-        // Show/hide value input if needed
-        if (option.valueType) {
-            view.toggleValueInput(optionKey, checked);
+        view.expandedCategories.add(categoryKey);
+
+        if (nmapConfig[categoryKey].exclusive) {
+            view.renderOptions(model.getConfig(), this);
+            view.applySearchFilter();
+
+            const groupEl = document.querySelector(`.category-group[data-category="${categoryKey}"]`);
+            if (groupEl) {
+                groupEl.classList.add('expanded');
+            }
+        } else {
+            view.refreshCategoryUI(categoryKey, this);
         }
-        
+
         this.updateCommand();
     },
 
-    // Handle value change
     handleValueChange(optionKey, value) {
         model.setOptionValue(optionKey, value);
         this.updateCommand();
     },
 
-    // Update command output
-    updateCommand() {
-        const command = model.generateCommand();
-        view.updateCommand(command);
+    isOptionSelected(key) {
+        return key in model.state.selectedOptions;
     },
 
-    // Copy command to clipboard
+    getOptionValue(key) {
+        return model.state.selectedOptions[key]?.value || '';
+    },
+
+    countInCategory(categoryKey) {
+        return Object.keys(model.state.selectedOptions).filter(k => k.startsWith(categoryKey + '_')).length;
+    },
+
+    applyPreset(preset) {
+        model.state.selectedOptions = {};
+        model.state.activePreset = preset.name;
+        preset.flags.forEach(flag => {
+            const found = model.flagLookup(flag);
+            if (found) {
+                model.state.selectedOptions[found.key] = {
+                    flag: found.option.flag,
+                    name: found.option.name,
+                    desc: found.option.desc,
+                    value: '',
+                    valueType: found.option.valueType,
+                    placeholder: found.option.placeholder || '',
+                    categoryKey: found.categoryKey
+                };
+                view.expandedCategories.add(found.categoryKey);
+            }
+        });
+        
+        const advPanel = document.getElementById('advancedPanel');
+        const toggleAdvBtn = document.getElementById('toggleAdvancedPanel');
+        if (advPanel && toggleAdvBtn) {
+            advPanel.classList.add('show');
+            toggleAdvBtn.textContent = 'Sluiten ▲';
+        }
+
+        this.renderAll();
+        view.applySearchFilter();
+        this.updateCommand();
+    },
+
+    updateCommand() {
+        const command = model.generateCommand();
+        const explanation = model.generateExplanation();
+        const flagCount = Object.keys(model.state.selectedOptions).length;
+        view.updateCommand(command, explanation, flagCount);
+    },
+
     copyCommand() {
         const command = model.generateCommand();
-        
-        // Use modern clipboard API
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(command)
                 .then(() => {
-                    view.showCopyFeedback(true);
+                    const btn = document.getElementById('copyBtn');
+                    if (btn) {
+                        const originalText = btn.textContent;
+                        btn.textContent = 'Gekopieerd! ✓';
+                        setTimeout(() => { btn.textContent = originalText; }, 2000);
+                    }
                 })
-                .catch(err => {
-                    console.error('Failed to copy:', err);
-                    this.fallbackCopy(command);
-                });
-        } else {
-            // Fallback for older browsers
-            this.fallbackCopy(command);
-        }
-    },
-
-    // Fallback copy method
-    fallbackCopy(text) {
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        document.body.appendChild(textArea);
-        textArea.select();
-        
-        try {
-            const successful = document.execCommand('copy');
-            view.showCopyFeedback(successful);
-        } catch (err) {
-            console.error('Fallback copy failed:', err);
-            view.showCopyFeedback(false);
-        }
-        
-        document.body.removeChild(textArea);
-    },
-
-    // Export configuration (optional utility)
-    exportConfig() {
-        const state = model.getState();
-        const json = JSON.stringify(state, null, 2);
-        console.log('Current configuration:', json);
-        return json;
-    },
-
-    // Import configuration (optional utility)
-    importConfig(jsonString) {
-        try {
-            const state = JSON.parse(jsonString);
-            
-            // Restore state
-            model.state = state;
-            
-            // Update UI
-            document.getElementById('target').value = state.target;
-            document.getElementById('osSelect').value = state.os;
-            
-            // Update checkboxes and inputs
-            for (const [key, option] of Object.entries(state.selectedOptions)) {
-                view.updateCheckbox(key, true);
-                if (option.valueType) {
-                    view.toggleValueInput(key, true);
-                    view.updateInputValue(key, option.value);
-                }
-            }
-            
-            this.updateCommand();
-        } catch (err) {
-            console.error('Failed to import configuration:', err);
+                .catch(err => console.error('Kopiëren mislukt', err));
         }
     }
 };
+
+document.addEventListener('DOMContentLoaded', () => {
+    controller.init();
+});

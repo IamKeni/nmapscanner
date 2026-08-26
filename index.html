@@ -3,54 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nmap Command Generator</title>
+    <title>Nmap Commando Generator - Eenvoudig & Snel</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./assets/css/style.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🔍 Nmap Command Generator</h1>
-            <p>Genereer professionele Nmap scan commando's met een paar klikken</p>
-        </div>
 
-        <div class="content">
-            <!-- Target Selection -->
-            <div class="section">
-                <div class="section-title">Doelwit Selectie</div>
-
-                <div class="input-group">
-                    <label for="target">IP Adres / Netwerk:</label>
-                    <input type="text" id="target" placeholder="bijv. 192.168.1.1 of 192.168.1.0/24">
-                </div>
-            </div>
-
-            <!-- Scan Options -->
-            <div class="section">
-                <div class="section-title">Scan Opties</div>
-                <div id="scanOptions"></div>
-            </div>
-
-            <!-- Output -->
-            <div class="output-section">
-                <h3>📋 Gegenereerd Commando:</h3>
-                <div class="command-output" id="commandOutput">
-                    Selecteer opties om een commando te genereren...
-                </div>
-                <button class="copy-btn" onclick="controller.copyCommand()">Kopieer naar Klembord</button>
-            </div>
-        </div>
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <h1>Nmap Commando Generator</h1>
+        <p>Maak in 3 simpele stappen het perfecte scancommando, zonder dat je alle vlaggen uit je hoofd hoeft te kennen.</p>
     </div>
 
-    <!-- Include external files -->
-    <script src="./assets/js/config.js"></script>
-    <script src="./assets/js/model.js"></script>
-    <script src="./assets/js/view.js"></script>
-    <script src="./assets/js/controller.js"></script>
-    <script>
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', () => {
-            controller.init();
-        });
-    </script>
+    <!-- Main Grid Layout -->
+    <div class="builder-grid">
+        
+        <!-- LINKERKOLOM: De Stappen -->
+        <div class="steps-column">
+
+            <!-- STAP 1: Doelwit & Rechten -->
+            <div class="card">
+                <div class="card-step">Stap 1</div>
+                <h2>Doelwit & Systeemrechten</h2>
+                <div class="input-group">
+                    <label for="target">IP-adres, hostname of netwerk:</label>
+                    <input type="text" id="target" placeholder="bijv. 192.168.1.1 of domein.nl">
+                </div>
+                <label class="checkbox-row">
+                    <input type="checkbox" id="sudoToggle">
+                    <span>Voeg <strong>sudo</strong> toe (nodig voor SYN-scans en OS-detectie)</span>
+                </label>
+            </div>
+
+            <!-- STAP 2: Wat is het doel? (Presets / Wizards) -->
+            <div class="card">
+                <div class="card-step">Stap 2</div>
+                <h2>Wat wil je bereiken?</h2>
+                <p class="card-subtitle">Kies een slimme standaard of pas het hieronder aan.</p>
+                <!-- HIER WAS DE CONTAINER ID MIST -->
+                <div class="preset-grid" id="presetGrid"></div>
+            </div>
+
+            <!-- STAP 3: Fijnregeling (Optioneel) -->
+            <div class="card">
+                <div class="card-step">Stap 3</div>
+                <div class="card-header-toggle advanced-toggle-trigger" style="cursor: pointer;">
+                    <h2>Geavanceerde instellingen</h2>
+                    <span id="toggleAdvancedPanel" class="text-btn">Openen ▼</span>
+                </div>
+                <p class="card-subtitle advanced-toggle-trigger" style="cursor: pointer;">Voor als je specifieke poorten, timing of scripts wilt instellen.</p>
+                
+                <div id="advancedPanel" class="advanced-panel-hidden">
+                    <div class="search-wrap" style="margin-bottom: 16px;">
+                        <input type="text" id="searchInput" placeholder="Zoek een specifieke optie (bijv. 'script', 'UDP')...">
+                    </div>
+                    <!-- HIER WAS DE CONTAINER ID MIST -->
+                    <div id="scanOptions"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RECHTERKOLOM: Live Output & Uitleg (Sticky) -->
+        <div class="output-column">
+            <div class="sticky-output-card">
+                <h3>📋 Jouw Nmap Commando</h3>
+                <p class="output-sub">Past zich direct live aan:</p>
+                
+                <div class="command-output" id="commandOutput">nmap</div>
+                
+                <div class="action-buttons">
+                    <button type="button" class="primary-btn" id="copyBtn">Kopieer naar klembord</button>
+                    <button type="button" class="secondary-btn" id="resetBtn">Reset alles</button>
+                </div>
+
+                <!-- Jip-en-Janneke Uitleg Box -->
+                <div class="explanation-box">
+                    <h4>💡 Wat doet dit commando precies?</h4>
+                    <p id="commandExplanation">Voer een doelwit in of kies een optie om de uitleg te lezen.</p>
+                </div>
+
+                <!-- Mini Educatief blokje -->
+                <div class="tips-box">
+                    <h4>🎓 Wist je dat?</h4>
+                    <p>Een <code>-T4</code> timing scan is ideaal voor lokale netwerken, maar kan op trage verbindingen pakketjes missen.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="./assets/js/config.js"></script>
+<script src="./assets/js/model.js"></script>
+<script src="./assets/js/view.js"></script>
+<script src="./assets/js/controller.js"></script>
 </body>
 </html>

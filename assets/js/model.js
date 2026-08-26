@@ -1,86 +1,82 @@
-// Model - Data management
 const model = {
-    // State
     state: {
         target: '',
-        selectedOptions: {} // {categoryKey_index: {flag, value}}
+        useSudo: false,
+        selectedOptions: {},
+        activePreset: null
     },
 
-    // Get configuration
     getConfig() {
         return nmapConfig;
     },
 
-    // Set target type
-    setTargetType(type) {
-        this.state.targetType = type;
-    },
-
-    // Set target
     setTarget(target) {
         this.state.target = target;
     },
 
-    // Set OS
-    setOS(os) {
-        this.state.os = os;
+    setSudo(useSudo) {
+        this.state.useSudo = useSudo;
     },
 
-    // Toggle option
-    toggleOption(key, option, checked) {
+    toggleOption(key, option, categoryKey, checked) {
+        const cat = nmapConfig[categoryKey];
+
+        if (cat.exclusive && this.state.selectedOptions[key]) {
+            delete this.state.selectedOptions[key];
+            return;
+        }
+
+        if (checked && cat.exclusive) {
+            Object.keys(this.state.selectedOptions).forEach(k => {
+                if (k.startsWith(categoryKey + '_') && k !== key) {
+                    delete this.state.selectedOptions[k];
+                }
+            });
+        }
+
         if (checked) {
             this.state.selectedOptions[key] = {
                 flag: option.flag,
+                name: option.name,
+                desc: option.desc,
                 value: '',
                 valueType: option.valueType,
-                placeholder: option.placeholder || ''
+                placeholder: option.placeholder || '',
+                categoryKey
             };
         } else {
             delete this.state.selectedOptions[key];
         }
     },
 
-    // Set option value
     setOptionValue(key, value) {
         if (this.state.selectedOptions[key]) {
             this.state.selectedOptions[key].value = value;
         }
     },
 
-    // Generate command
     generateCommand() {
-        let command = 'nmap';
+        let command = this.state.useSudo ? 'sudo nmap' : 'nmap';
         const flags = [];
 
-        // Add selected options with their values
-        for (const [key, option] of Object.entries(this.state.selectedOptions)) {
+        for (const option of Object.values(this.state.selectedOptions)) {
             let flagStr = option.flag;
-            
-            // If option has a value type and a value is provided
             if (option.valueType && option.value) {
-                // Check if flag already has '=' in it (like --script=)
                 if (flagStr.includes('=')) {
-                    // Replace the default value after '='
                     const parts = flagStr.split('=');
                     flagStr = `${parts[0]}=${option.value}`;
                 } else {
-                    // Add space and value
                     flagStr = `${flagStr} ${option.value}`;
                 }
             } else if (option.valueType && !option.value) {
-                // If value type exists but no value provided, skip this option
                 continue;
             }
-            
             flags.push(flagStr);
         }
 
-        // Add flags to command
         if (flags.length > 0) {
             command += ' ' + flags.join(' ');
         }
-
-        // Add target
         if (this.state.target) {
             command += ' ' + this.state.target;
         }
@@ -88,18 +84,47 @@ const model = {
         return command;
     },
 
-    // Get current state
-    getState() {
-        return this.state;
+    generateExplanation() {
+        const options = Object.values(this.state.selectedOptions);
+        if (options.length === 0 && !this.state.target) {
+            return "Voer een doelwit in of kies een optie om de uitleg te lezen.";
+        }
+
+        let parts = [];
+        options.forEach(opt => {
+            parts.push(`<strong>${opt.name}</strong>: ${opt.desc.toLowerCase()}`);
+        });
+
+        let text = "Dit commando voert nmap uit ";
+        if (this.state.useSudo) text += "met root-rechten (sudo) ";
+        
+        if (options.length > 0) {
+            text += "en past de volgende opties toe:<br>• " + parts.join("<br>• ");
+        } else {
+            text += "zonder extra vlaggen.";
+        }
+
+        if (this.state.target) {
+            text += `<br><br>🎯 <strong>Doelwit:</strong> ${this.state.target}`;
+        }
+
+        return text;
     },
 
-    // Check if option is selected
-    isOptionSelected(key) {
-        return key in this.state.selectedOptions;
+    resetState() {
+        this.state.target = '';
+        this.state.useSudo = false;
+        this.state.selectedOptions = {};
+        this.state.activePreset = null;
     },
-
-    // Get option value
-    getOptionValue(key) {
-        return this.state.selectedOptions[key]?.value || '';
+        
+    flagLookup(flag) {
+        for (const [catKey, cat] of Object.entries(nmapConfig)) {
+            const idx = cat.options.findIndex(o => o.flag === flag);
+            if (idx !== -1) {
+                return { key: `${catKey}_${idx}`, option: cat.options[idx], categoryKey: catKey };
+            }
+        }
+        return null;
     }
 };

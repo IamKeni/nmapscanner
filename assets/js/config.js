@@ -1,139 +1,108 @@
-// Nmap Configuration
-// valueType opties:
-// - null: geen extra waarde nodig
-// - "text": vrije tekst invoer
-// - "number": numerieke invoer
-// - "ip": IP adres invoer
-// - "ports": poort specificatie
-
 const nmapConfig = {
-    "scanTypes": {
-        "name": "Scan Types",
-        "options": [
-            {"flag": "-sS", "name": "-sS", "desc": "TCP SYN Scan (Stealth scan, standaard)", "valueType": null},
-            {"flag": "-sT", "name": "-sT", "desc": "TCP Connect Scan (Volledige TCP verbinding)", "valueType": null},
-            {"flag": "-sU", "name": "-sU", "desc": "UDP Scan (Scan UDP poorten)", "valueType": null},
-            {"flag": "-sA", "name": "-sA", "desc": "TCP ACK Scan (Detecteer firewall regels)", "valueType": null},
-            {"flag": "-sW", "name": "-sW", "desc": "TCP Window Scan", "valueType": null},
-            {"flag": "-sM", "name": "-sM", "desc": "TCP Maimon Scan", "valueType": null},
-            {"flag": "-sN", "name": "-sN", "desc": "TCP Null Scan", "valueType": null},
-            {"flag": "-sF", "name": "-sF", "desc": "TCP FIN Scan", "valueType": null},
-            {"flag": "-sX", "name": "-sX", "desc": "TCP Xmas Scan", "valueType": null},
-            {"flag": "-sV", "name": "-sV", "desc": "Version Detection (Detecteer service versies)", "valueType": null},
-            {"flag": "-sC", "name": "-sC", "desc": "Default Scripts (Voer standaard NSE scripts uit)", "valueType": null}
+    scanTypes: {
+        title: "Scan Typen",
+        exclusive: true,
+        options: [
+            { flag: "-sS", name: "TCP SYN Scan", desc: "De standaard en meest populaire stealth-scan. Stuurt SYN pakketjes en wacht op antwoord zonder de verbinding volledig te voltooien." },
+            { flag: "-sT", name: "TCP Connect Scan", desc: "Gebruikt de volledige systeemverbinding (connect). Handig als je geen root-rechten hebt." },
+            { flag: "-sU", name: "UDP Scan", desc: "Scant op open UDP poorten zoals DNS, DHCP en SNMP. Kost vaak meer tijd." },
+            { flag: "-sA", name: "TCP ACK Scan", desc: "Handig om te testen of poorten gefilterd worden door een firewall." },
+            { flag: "-sN", name: "TCP Null Scan", desc: "Stuurt pakketjes zonder enige vlag aan (stiekem)." },
+            { flag: "-sF", name: "TCP FIN Scan", desc: "Stuurt pakketjes met alleen de FIN vlag aan." },
+            { flag: "-sX", name: "TCP Xmas Scan", desc: "Zet de FIN, PSH en URG vlaggen aan om de status van poorten te achterhalen." },
+            { flag: "-sP", name: "Ping Scan (Host Discovery)", desc: "Scant alleen of de host(s) online zijn, zonder poorten te scannen." },
+            { flag: "-sI", name: "Idle Scan", desc: "Een geavanceerde stealth-scan waarbij de scan via een externe 'zombie' host loopt.", valueType: "text", placeholder: "bijv. zombie_host_ip", valueLabel: "Zombie IP:" },
+            { flag: "-sO", name: "IP Protocol Scan", desc: "Hiermee kun je achterhalen welke IP-protocollen (TCP, UDP, ICMP, etc.) het doelwit ondersteunt." }
         ]
     },
-    "hostDiscovery": {
-        "name": "Host Discovery",
-        "options": [
-            {"flag": "-Pn", "name": "-Pn", "desc": "Skip Ping (Behandel alle hosts als online)", "valueType": null},
-            {"flag": "-PS", "name": "-PS", "desc": "TCP SYN Ping (TCP SYN discovery)", "valueType": "ports", "placeholder": "22,80,443"},
-            {"flag": "-PA", "name": "-PA", "desc": "TCP ACK Ping (TCP ACK discovery)", "valueType": "ports", "placeholder": "22,80,443"},
-            {"flag": "-PU", "name": "-PU", "desc": "UDP Ping (UDP discovery)", "valueType": "ports", "placeholder": "53,161"},
-            {"flag": "-PE", "name": "-PE", "desc": "ICMP Echo Ping (ICMP echo request)", "valueType": null},
-            {"flag": "-PP", "name": "-PP", "desc": "ICMP Timestamp Ping", "valueType": null},
-            {"flag": "-PM", "name": "-PM", "desc": "ICMP Netmask Ping", "valueType": null}
+    portOptions: {
+        title: "Poorten & Selectie",
+        exclusive: false,
+        options: [
+            { flag: "-p-", name: "Alle poorten", desc: "Scant alle 65535 poorten van het doelwit.", valueType: false },
+            { flag: "-p", name: "Specifieke poorten of bereik", desc: "Geef zelf poorten op (bijv. 80,443 of 1-1000).", valueType: "text", placeholder: "bijv. 80,443 of 1-1000", valueLabel: "Poort(en):" },
+            { flag: "--top-ports", name: "Meest voorkomende poorten", desc: "Scant alleen de N meest gebruikte poorten.", valueType: "number", placeholder: "bijv. 100", valueLabel: "Aantal top poorten:" },
+            { flag: "-F", name: "Snelle scan", desc: "Scant alleen de top 100 belangrijkste poorten." },
+            { flag: "-r", name: "Geen willekeurige poortvolgorde", desc: "Scant de poorten op volgorde in plaats van willekeurig." },
+            { flag: "--port-ratio", name: "Poorten ratio", desc: "Scant poorten vaker dan een bepaalde frequentiewaarde.", valueType: "text", placeholder: "bijv. 0.1", valueLabel: "Ratio waarde:" }
         ]
     },
-    "portSpecification": {
-        "name": "Port Specification",
-        "options": [
-            {"flag": "-p-", "name": "-p-", "desc": "All Ports (Scan alle 65535 poorten)", "valueType": null},
-            {"flag": "-p", "name": "-p", "desc": "Custom Ports (Specifieke poorten of ranges)", "valueType": "ports", "placeholder": "80,443,8000-9000"},
-            {"flag": "-F", "name": "-F", "desc": "Fast Scan (Scan 100 meest voorkomende poorten)", "valueType": null},
-            {"flag": "--top-ports", "name": "--top-ports", "desc": "Top Ports (Scan top N poorten)", "valueType": "number", "placeholder": "100"},
-            {"flag": "--port-ratio", "name": "--port-ratio", "desc": "Port Ratio (Scan poorten boven ratio)", "valueType": "number", "placeholder": "0.1"}
+    serviceOs: {
+        title: "Service & OS Detectie",
+        exclusive: false,
+        options: [
+            { flag: "-sV", name: "Service / Versie detectie", desc: "Probeert te achterhalen welke software en versienummer er achter een open poort draait." },
+            { flag: "--version-intensity", name: "Versie-intensiteit", desc: "Hoe grondig nmap zoekt (0 = licht, 9 = intensief/alles proberen).", valueType: "number", placeholder: "bijv. 5", valueLabel: "Intensiteit (0-9):" },
+            { flag: "-O", name: "Besturingssysteem detectie", desc: "Probeert te achterhalen welk OS (Windows, Linux, etc.) het doelwit gebruikt (vereist root)." },
+            { flag: "--osscan-limit", name: "OS scan limiet", desc: "Beperkt OS-detectie tot doelen waarvan minstens één open en één gesloten poort is gevonden." },
+            { flag: "--osscan-guess", name: "Aggressief OS raden", desc: "Raadt het besturingssysteem agressiever als het niet 100% matchend is." },
+            { flag: "-A", name: "Aggressieve scan", desc: "Inclusief OS detectie, versie detectie, script scanning en traceroute." }
         ]
     },
-    "timingPerformance": {
-        "name": "Timing & Performance",
-        "options": [
-            {"flag": "-T0", "name": "-T0", "desc": "Paranoid (Extreem langzaam - IDS evasion)", "valueType": null},
-            {"flag": "-T1", "name": "-T1", "desc": "Sneaky (Zeer langzaam)", "valueType": null},
-            {"flag": "-T2", "name": "-T2", "desc": "Polite (Langzaam)", "valueType": null},
-            {"flag": "-T3", "name": "-T3", "desc": "Normal (Standaard snelheid)", "valueType": null},
-            {"flag": "-T4", "name": "-T4", "desc": "Aggressive (Snel - aanbevolen)", "valueType": null},
-            {"flag": "-T5", "name": "-T5", "desc": "Insane (Zeer snel)", "valueType": null},
-            {"flag": "--min-rate", "name": "--min-rate", "desc": "Minimum packets per seconde", "valueType": "number", "placeholder": "100"},
-            {"flag": "--max-rate", "name": "--max-rate", "desc": "Maximum packets per seconde", "valueType": "number", "placeholder": "1000"},
-            {"flag": "--min-parallelism", "name": "--min-parallelism", "desc": "Minimum parallelle probes", "valueType": "number", "placeholder": "10"},
-            {"flag": "--max-parallelism", "name": "--max-parallelism", "desc": "Maximum parallelle probes", "valueType": "number", "placeholder": "100"},
-            {"flag": "--host-timeout", "name": "--host-timeout", "desc": "Timeout per host", "valueType": "text", "placeholder": "30m"}
+    timing: {
+        title: "Timing & Snelheid",
+        exclusive: true,
+        options: [
+            { flag: "-T0", name: "Paranoïde (T0)", desc: "Extreem traag, bedoeld om IDS/firewalls te ontwijken." },
+            { flag: "-T1", name: "Sneaky (T1)", desc: "Ook erg traag om detectie te voorkomen." },
+            { flag: "-T2", name: "Polite (T2)", desc: "Belast de netwerkbandbreedte minder en is trager." },
+            { flag: "-T3", name: "Normal (T3)", desc: "De standaard snelheid." },
+            { flag: "-T4", name: "Aggressive (T4)", desc: "Snelle scan, ideaal voor lokale netwerken en betrouwbare verbindingen." },
+            { flag: "-T5", name: "Insane (T5)", desc: "Extreem snel, kans op gemiste pakketjes (misschien onbetrouwbaar)." }
         ]
     },
-    "osDetection": {
-        "name": "OS & Service Detection",
-        "options": [
-            {"flag": "-O", "name": "-O", "desc": "OS Detection (Detecteer besturingssysteem)", "valueType": null},
-            {"flag": "-A", "name": "-A", "desc": "Aggressive Scan (OS, versie, script, traceroute)", "valueType": null},
-            {"flag": "--osscan-guess", "name": "--osscan-guess", "desc": "Guess OS (Agressiever OS detectie)", "valueType": null},
-            {"flag": "--osscan-limit", "name": "--osscan-limit", "desc": "OS Scan Limit (Limiteer OS detectie)", "valueType": null},
-            {"flag": "--version-intensity", "name": "--version-intensity", "desc": "Version Intensity (0-9)", "valueType": "number", "placeholder": "5"},
-            {"flag": "--version-light", "name": "--version-light", "desc": "Light Version (Lichte versie detectie)", "valueType": null},
-            {"flag": "--version-all", "name": "--version-all", "desc": "All Version (Probeer elke probe)", "valueType": null}
+    firewall: {
+        title: "Firewall / Spoofing & Evasion",
+        exclusive: false,
+        options: [
+            { flag: "-f", name: "Pakketjes fragmenteren", desc: "Fragmenteert de IP-pakketjes om firewalls of IDS te omzeilen." },
+            { flag: "-D", name: "Decoy / Afleiden", desc: "Laat de scan lijken te komen vanaf meerdere valse IP-adressen.", valueType: "text", placeholder: "bijv. RND:10 of IP1,IP2", valueLabel: "Decoy IP's:" },
+            { flag: "-S", name: "IP Spoofing", desc: "Verandert je eigen bron-IPadres in een ander adres.", valueType: "text", placeholder: "bijv. 1.2.3.4", valueLabel: "Vervalst IP:" },
+            { flag: "-e", name: "Specifieke netwerkinterface", desc: "Dwingt Nmap om een specifieke netwerkkaart te gebruiken.", valueType: "text", placeholder: "bijv. eth0 of wlan0", valueLabel: "Interface:" },
+            { flag: "--source-port", name: "Vaste bronpoort", desc: "Gebruikt een specifieke bronpoort (handig om firewalls te misleiden).", valueType: "text", placeholder: "bijv. 53 of 80", valueLabel: "Bronpoort:" },
+            { flag: "--badsum", name: "Foutachtige TCP/UDP checksum", desc: "Stuurt pakketjes met een foute checksum om systemen met defecte filters te testen." }
         ]
     },
-    "nseScripts": {
-        "name": "NSE Scripts",
-        "options": [
-            {"flag": "--script=default", "name": "--script=default", "desc": "Default Scripts (Standaard script set)", "valueType": null},
-            {"flag": "--script=vuln", "name": "--script=vuln", "desc": "Vulnerability Scan (Bekende kwetsbaarheden)", "valueType": null},
-            {"flag": "--script=exploit", "name": "--script=exploit", "desc": "Exploit Scripts", "valueType": null},
-            {"flag": "--script=auth", "name": "--script=auth", "desc": "Auth Scripts (Authenticatie)", "valueType": null},
-            {"flag": "--script=brute", "name": "--script=brute", "desc": "Brute Force Scripts", "valueType": null},
-            {"flag": "--script=discovery", "name": "--script=discovery", "desc": "Discovery Scripts", "valueType": null},
-            {"flag": "--script=dos", "name": "--script=dos", "desc": "DoS Scripts (Denial of Service)", "valueType": null},
-            {"flag": "--script=malware", "name": "--script=malware", "desc": "Malware Detection (Detecteer malware)", "valueType": null},
-            {"flag": "--script", "name": "--script", "desc": "Custom Script (Specifieke script naam)", "valueType": "text", "placeholder": "http-title,ssl-cert"},
-            {"flag": "--script-args", "name": "--script-args", "desc": "Script Arguments", "valueType": "text", "placeholder": "user=admin,pass=test"}
-        ]
-    },
-    "firewallEvasion": {
-        "name": "Firewall/IDS Evasion",
-        "options": [
-            {"flag": "-f", "name": "-f", "desc": "Fragment Packets (Fragmenteer packets)", "valueType": null},
-            {"flag": "--mtu", "name": "--mtu", "desc": "MTU Size (Aangepaste MTU grootte)", "valueType": "number", "placeholder": "24"},
-            {"flag": "-D", "name": "-D", "desc": "Decoy Scan (Gebruik decoy IP's)", "valueType": "text", "placeholder": "RND:10 of ME,192.168.1.5"},
-            {"flag": "-S", "name": "-S", "desc": "Spoof Source (Vervals bron IP)", "valueType": "ip", "placeholder": "192.168.1.100"},
-            {"flag": "-e", "name": "-e", "desc": "Interface (Specifieke network interface)", "valueType": "text", "placeholder": "eth0"},
-            {"flag": "--source-port", "name": "--source-port", "desc": "Source Port (Specifieke bron poort)", "valueType": "number", "placeholder": "53"},
-            {"flag": "--data-length", "name": "--data-length", "desc": "Data Length (Append random data)", "valueType": "number", "placeholder": "200"},
-            {"flag": "--randomize-hosts", "name": "--randomize-hosts", "desc": "Randomize Hosts (Randomiseer volgorde)", "valueType": null},
-            {"flag": "--spoof-mac", "name": "--spoof-mac", "desc": "Spoof MAC (Vervals MAC adres)", "valueType": "text", "placeholder": "0 of AA:BB:CC:DD:EE:FF"},
-            {"flag": "--badsum", "name": "--badsum", "desc": "Bad Checksum (Foute checksum voor evasion)", "valueType": null},
-            {"flag": "--ttl", "name": "--ttl", "desc": "TTL Value (Stel IP TTL in)", "valueType": "number", "placeholder": "64"}
-        ]
-    },
-    "output": {
-        "name": "Output Options",
-        "options": [
-            {"flag": "-oN", "name": "-oN", "desc": "Normal Output (Normale output naar bestand)", "valueType": "text", "placeholder": "output.txt"},
-            {"flag": "-oX", "name": "-oX", "desc": "XML Output", "valueType": "text", "placeholder": "output.xml"},
-            {"flag": "-oG", "name": "-oG", "desc": "Grepable Output", "valueType": "text", "placeholder": "output.grep"},
-            {"flag": "-oA", "name": "-oA", "desc": "All Formats (Output in alle formaten)", "valueType": "text", "placeholder": "output"},
-            {"flag": "-v", "name": "-v", "desc": "Verbose (Uitgebreide output)", "valueType": null},
-            {"flag": "-vv", "name": "-vv", "desc": "Very Verbose (Zeer uitgebreide output)", "valueType": null},
-            {"flag": "-d", "name": "-d", "desc": "Debug Mode", "valueType": null},
-            {"flag": "-dd", "name": "-dd", "desc": "More Debug (Meer debug info)", "valueType": null},
-            {"flag": "--reason", "name": "--reason", "desc": "Show Reason (Toon reden voor poort status)", "valueType": null},
-            {"flag": "--open", "name": "--open", "desc": "Only Open (Toon alleen open poorten)", "valueType": null},
-            {"flag": "--packet-trace", "name": "--packet-trace", "desc": "Packet Trace (Toon packets)", "valueType": null},
-            {"flag": "--append-output", "name": "--append-output", "desc": "Append Output (Voeg toe aan bestaand bestand)", "valueType": null}
-        ]
-    },
-    "misc": {
-        "name": "Miscellaneous Options",
-        "options": [
-            {"flag": "-6", "name": "-6", "desc": "IPv6 (Enable IPv6 scanning)", "valueType": null},
-            {"flag": "-n", "name": "-n", "desc": "No DNS (Geen DNS resolutie)", "valueType": null},
-            {"flag": "-R", "name": "-R", "desc": "Always DNS (Altijd DNS resolutie)", "valueType": null},
-            {"flag": "--dns-servers", "name": "--dns-servers", "desc": "DNS Servers (Aangepaste DNS servers)", "valueType": "text", "placeholder": "8.8.8.8,1.1.1.1"},
-            {"flag": "--traceroute", "name": "--traceroute", "desc": "Traceroute (Trace pad naar host)", "valueType": null},
-            {"flag": "--privileged", "name": "--privileged", "desc": "Privileged Mode (Assume privileges)", "valueType": null},
-            {"flag": "--unprivileged", "name": "--unprivileged", "desc": "Unprivileged Mode (Assume no privileges)", "valueType": null},
-            {"flag": "-iL", "name": "-iL", "desc": "Input from File (Lees targets van bestand)", "valueType": "text", "placeholder": "targets.txt"},
-            {"flag": "--exclude", "name": "--exclude", "desc": "Exclude Hosts (Exclusief hosts/netwerken)", "valueType": "text", "placeholder": "192.168.1.1"},
-            {"flag": "--excludefile", "name": "--excludefile", "desc": "Exclude File (Exclusief hosts van bestand)", "valueType": "text", "placeholder": "exclude.txt"}
+    advanced: {
+        title: "Scripts & Output",
+        exclusive: false,
+        options: [
+            { flag: "-Pn", name: "Geen Ping", desc: "Slaat de ping-stap over. Handig als een host niet reageert op pings, maar wel open staat." },
+            { flag: "-v", name: "Verbose output", desc: "Laat meer informatie zien tijdens het scannen (meerdere -v is mogelijk)." },
+            { flag: "-vv", name: "Extra Verbose", desc: "Nóg meer details tijdens het uitvoeren van de scan." },
+            { flag: "-sC", name: "Standaard scripts", desc: "Voert de standaard set Nmap Scripting Engine (NSE) scripts uit." },
+            { flag: "--script", name: "Specifiek script of categorie", desc: "Voer een specifiek script of scriptcategorie uit (bijv. vuln, default).", valueType: "text", placeholder: "bijv. vuln of http-title", valueLabel: "Script naam:" },
+            { flag: "--script-args", name: "Script argumenten", desc: "Geef extra argumenten mee aan de gekozen scripts.", valueType: "text", placeholder: "bijv. user=admin", valueLabel: "Argumenten:" },
+            { flag: "-oN", name: "Opslaan als tekstbestand", desc: "Slaat de scanresultaten op in een gewoon tekstbestand.", valueType: "text", placeholder: "bijv. scan.txt", valueLabel: "Bestandsnaam:" },
+            { flag: "-oX", name: "Opslaan als XML", desc: "Slaat de resultaten op in XML-formaat (handig voor rapportages).", valueType: "text", placeholder: "bijv. scan.xml", valueLabel: "Bestandsnaam (XML):" },
+            { flag: "--traceroute", name: "Traceroute", desc: "Traceert de netwerkroute naar elke host." }
         ]
     }
 };
+
+const nmapPresets = [
+    {
+        icon: "⚡",
+        name: "Snelle Poortscan",
+        description: "Ideaal om snel te kijken welke poorten openstaan op een lokaal netwerk.",
+        flags: ["-sS", "-T4", "-F"]
+    },
+    {
+        icon: "🔍",
+        name: "Grondige Service Scan",
+        description: "Controleert alle poorten en achterhaalt exact welke software er achter draait.",
+        flags: ["-sS", "-sV", "-p-", "-T4"]
+    },
+    {
+        icon: "🕵️‍♂️",
+        name: "Stille / Stevige Scan",
+        description: "Probeert onopgemerkt te blijven en slaat ping-detectie over.",
+        flags: ["-sS", "-Pn", "-T2"]
+    },
+    {
+        icon: "🎯",
+        name: "Volledige Systeemcheck",
+        description: "Inclusief OS-detectie, script scanning en agressieve timing.",
+        flags: ["-A", "-T4"]
+    }
+];
